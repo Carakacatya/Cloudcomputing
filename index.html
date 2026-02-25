@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Presensi System</title>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+
+<body>
+
+<header class="hero">
+  <div class="hero-content">
+    <h1>QR Presensi</h1>
+  </div>
+</header>
+
+<section class="main-container">
+
+  <div class="card">
+    <h3>Generate QR</h3>
+    <button class="btn-primary" id="generateBtn">Generate QR Code</button>
+    <div id="qrContainer"></div>
+  </div>
+
+  <div class="card">
+    <h3>Scan QR</h3>
+
+    <div class="button-group">
+      <button class="btn-primary" onclick="startCamera()">Start Kamera</button>
+      <button class="btn-secondary" onclick="stopCamera()">Stop</button>
+    </div>
+
+    <div id="reader"></div>
+
+    <div class="upload-section">
+      <p class="upload-title">Atau upload gambar QR</p>
+      <input type="file" id="fileInput" accept="image/*">
+    </div>
+
+    <div id="statusMessage"></div>
+
+  </div>
+
+</section>
+
+<script src="script.js"></script>
+</body>
+</html>
