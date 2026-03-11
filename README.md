@@ -1,74 +1,174 @@
+# QR Code Attendance System
 
-Project ini merupakan tugas praktikum mata kuliah Cloud Computing yang dikerjakan secara berkelompok sebelum UTS pada semester 6 Program Studi D4 Teknik Informatika.
+---
 
-Deskripsi Project
-Sistem ini adalah aplikasi presensi berbasis web menggunakan QR Code.
-Mahasiswa melakukan presensi dengan cara memindai QR Code, kemudian data akan dikirim ke backend untuk proses validasi dan penyimpanan ke database.
+## OVERVIEW
 
-Selain fitur presensi, sistem juga mendukung pengiriman data sensor perangkat seperti:
-Accelerometer
-GPS
+QR Code Attendance System adalah aplikasi presensi berbasis web yang dibuat sebagai tugas praktikum mata kuliah **Cloud Computing** sebelum Ujian Tengah Semester pada Semester 6 Program Studi **D4 Teknik Informatika**.
 
-Data sensor tersebut digunakan untuk monitoring perangkat secara real-time.
+Aplikasi ini memungkinkan mahasiswa melakukan presensi dengan cara memindai QR Code menggunakan perangkat mereka. Data presensi yang dipindai akan dikirim ke backend untuk proses validasi dan penyimpanan ke database.
 
-Arsitektur Sistem
+Selain presensi, sistem ini juga mendukung pengiriman data sensor perangkat seperti **accelerometer** dan **GPS** untuk monitoring perangkat secara real-time.
+
+---
+
+## SYSTEM ARCHITECTURE
+
+Struktur arsitektur sistem adalah sebagai berikut:
+
+```
 User Device (Browser / Mobile)
-↓
+        │
+        ▼
 Frontend (GitHub Pages)
-↓
+        │
+        ▼
 HTTP Request
-↓
+        │
+        ▼
 Backend API (Google Apps Script)
-↓
+        │
+        ▼
 Database (Google Spreadsheet)
+```
 
-🛠 Tech Stack
-Google Apps Script → Backend API
-GitHub Pages → Frontend Hosting
-Google Spreadsheet → Database
-Postman → API Testing
-Swagger → Dokumentasi API
+---
 
-Fitur Utama
-Presensi menggunakan QR Code
-Validasi token QR
-Penyimpanan data presensi
-Monitoring status presensi
-Pengiriman data accelerometer
-Pengiriman dan penyimpanan data GPS
-Monitoring data sensor perangkat
+## TECHNOLOGY STACK
 
-Base URL API
+| Technology | Function |
+|-----------|----------|
+| Google Apps Script | Backend API |
+| GitHub Pages | Frontend hosting |
+| Google Spreadsheet | Database |
+| Postman | API testing |
+| Swagger | API documentation |
 
+---
 
-Endpoint API
-Method	Endpoint	Deskripsi
-POST	/scan-presence	Mencatat presensi berdasarkan QR
-GET	/presence-status	Mengecek status presensi
-POST	/generate-qr	Generate QR Code presensi
-POST	/telemetry/accel	Mengirim data accelerometer
-GET	/telemetry/accel/latest	Mengambil data accelerometer terbaru
-POST	/telemetry/gps	Mengirim data lokasi GPS
-GET	/telemetry/gps/latest	Mengambil lokasi GPS terbaru
-GET	/telemetry/gps/history	Mengambil riwayat lokasi GPS
+## FEATURES
 
-Cara Pengujian
-Akses halaman deployment (GitHub Pages).
-Scan QR Code untuk melakukan presensi.
-Data akan dikirim ke backend dan disimpan ke Google Spreadsheet.
-Sistem menampilkan response ke pengguna.
-Endpoint API juga dapat diuji menggunakan Postman.
+### Attendance
+- QR Code based attendance
+- QR token validation
+- Attendance data storage
+- Attendance status checking
 
-Pengujian Sensor:
-Kirim data accelerometer ke endpoint /telemetry/accel
-Kirim data GPS ke endpoint /telemetry/gps
+### Device Telemetry
+- Accelerometer data collection
+- GPS location tracking
+- Device monitoring
+- Sensor data history
 
-Dokumentasi
-Dokumentasi API tersedia dalam file swagger.yaml
-Dapat dibuka menggunakan https://editor.swagger.io/
+---
 
-Pembagian Tugas
-Backend
-Frontend
-QA & Testing
-Dokumentasi & Deployment
+## API BASE URL
+
+Tambahkan Base URL API pada bagian berikut:
+
+```
+https://script.google.com/macros/s/XXXXXXXX/exec
+```
+
+---
+
+## API ENDPOINTS
+
+| Method | Endpoint | Description |
+|------|------|------|
+| POST | /scan-presence | Record attendance using QR Code |
+| GET | /presence-status | Check attendance status |
+| POST | /generate-qr | Generate QR Code attendance |
+| POST | /telemetry/accel | Send accelerometer data |
+| GET | /telemetry/accel/latest | Get latest accelerometer data |
+| POST | /telemetry/gps | Send GPS data |
+| GET | /telemetry/gps/latest | Get latest GPS data |
+| GET | /telemetry/gps/history | Get GPS history |
+
+---
+
+## TESTING
+
+### Attendance Testing
+
+1. Buka halaman frontend yang telah di-deploy melalui GitHub Pages.
+2. Scan QR Code pada halaman presensi.
+3. Sistem akan mengirim data ke backend API.
+4. Backend memvalidasi dan menyimpan data ke Google Spreadsheet.
+5. Sistem menampilkan hasil presensi.
+
+### API Testing
+
+Endpoint API dapat diuji menggunakan **Postman** dengan mengirim request ke endpoint yang tersedia.
+
+---
+
+## SENSOR TESTING
+
+### Accelerometer
+
+Endpoint:
+
+```
+POST /telemetry/accel
+```
+
+Example payload:
+
+```json
+{
+  "x": 0.15,
+  "y": -0.02,
+  "z": 9.81
+}
+```
+
+### GPS
+
+Endpoint:
+
+```
+POST /telemetry/gps
+```
+
+Example payload:
+
+```json
+{
+  "latitude": -8.168,
+  "longitude": 113.716
+}
+```
+
+---
+
+## API DOCUMENTATION
+
+Dokumentasi API tersedia dalam file berikut:
+
+```
+swagger.yaml
+```
+
+File tersebut dapat dibuka menggunakan:
+
+```
+https://editor.swagger.io/
+```
+
+---
+
+## TEAM RESPONSIBILITIES
+
+| Role | Responsibility |
+|------|---------------|
+| Backend | Pengembangan API menggunakan Google Apps Script |
+| Frontend | Pengembangan antarmuka web |
+| QA & Testing | Pengujian sistem dan API |
+| Documentation & Deployment | Dokumentasi dan deployment |
+
+---
+
+## LICENSE
+
+Project ini dibuat untuk keperluan akademik pada mata kuliah **Cloud Computing**.
