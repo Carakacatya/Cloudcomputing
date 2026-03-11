@@ -1,9 +1,13 @@
 /* ════════════════════════════════════════════════
    mahasiswa.js — Tab Mahasiswa
 
+   FIELD MAPPING (sinkron dengan accel.js & gps.js):
+   - device_id = NIM  ← identifier utama di semua sheet
+   - user_id   = Nama
+
    3 cara input token:
    1. Scan kamera   → parse JSON otomatis
-   2. Upload file   → decode pakai jsQR (lebih reliable)
+   2. Upload file   → decode pakai jsQR
    3. Token manual  → muncul field course & session
    ════════════════════════════════════════════════ */
 
@@ -18,6 +22,27 @@
   function isMobile() {
     return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   }
+
+  /* ══════════════════════════════════════════
+     SYNC NIM (field user_id di HTML) → Accel & GPS
+     accel_device_id dan gps_device_id = NIM
+  ══════════════════════════════════════════ */
+  function syncNimToDevices(nim) {
+    const accelDev = document.getElementById('accel_device_id');
+    const gpsDev   = document.getElementById('gps_device_id');
+    if (accelDev) accelDev.value = nim;
+    if (gpsDev)   gpsDev.value   = nim;
+  }
+
+  (function initNimSync() {
+    // user_id di HTML = NIM
+    const nimInput = document.getElementById('user_id');
+    if (!nimInput) return;
+    if (nimInput.value.trim()) syncNimToDevices(nimInput.value.trim());
+    nimInput.addEventListener('input', () => {
+      syncNimToDevices(nimInput.value.trim());
+    });
+  })();
 
   /* ══════════════════════════════════════════
      PARSE TEKS QR
@@ -42,7 +67,6 @@
       }
     } catch (_) {}
 
-    // Plain token — minta course & session manual
     parsedQR = { token: text.toUpperCase(), course_id: '', session_id: '', isManual: true };
     const ti = $('manualToken');
     if (ti) ti.value = parsedQR.token;
@@ -88,14 +112,11 @@
     const stopBtn  = $('stopScan');
     const readerEl = $('reader');
     if (!wrapper || !readerEl) return;
-
     readerEl.innerHTML = '';
     wrapper.classList.remove('hidden');
     startBtn.classList.add('hidden');
     stopBtn.classList.remove('hidden');
-
     html5QrScanner = new Html5Qrcode('reader');
-
     try {
       await html5QrScanner.start(
         { facingMode: isMobile() ? 'environment' : 'user' },
@@ -128,68 +149,41 @@
   window.stopScanner = stopScanner;
 
   /* ══════════════════════════════════════════
-     UPLOAD FILE QR — pakai jsQR
-     Html5Qrcode.scanFile tidak reliable untuk foto.
-     jsQR decode langsung dari pixel ImageData.
+     UPLOAD FILE QR
   ══════════════════════════════════════════ */
   document.addEventListener('change', async function (e) {
     if (!e.target.closest('#qrFile')) return;
-
     const file = e.target.files[0];
     if (!file) return;
-
     const lbl = $('fileLabel');
     if (lbl) lbl.textContent = file.name;
-
     showResult('statusResult', '⏳ Membaca QR dari gambar...', 'success');
-
     try {
       const decoded = await decodeQRFromFile(file);
       handleScannedText(decoded);
       showResult('statusResult', '📁 QR dari gambar berhasil dibaca!', 'success');
     } catch (err) {
-      console.error('QR file error:', err);
-      showResult('statusResult',
-        '❌ QR tidak terbaca. Pastikan gambar jelas, tidak blur, dan QR terlihat penuh.',
-        'error'
-      );
+      showResult('statusResult', '❌ QR tidak terbaca. Pastikan gambar jelas.', 'error');
     }
-
     e.target.value = '';
   });
 
-  /* Decode QR dari File menggunakan jsQR (via Canvas) */
   function decodeQRFromFile(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = function (ev) {
         const img = new Image();
         img.onload = function () {
-          const canvas  = document.createElement('canvas');
-          canvas.width  = img.width;
-          canvas.height = img.height;
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width; canvas.height = img.height;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0);
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-          // jsQR decode
-          const code = jsQR(imageData.data, imageData.width, imageData.height, {
-            inversionAttempts: 'dontInvert'
-          });
-
-          if (code) {
-            resolve(code.data);
-          } else {
-            // Coba dengan inverted
-            const code2 = jsQR(imageData.data, imageData.width, imageData.height, {
-              inversionAttempts: 'invertFirst'
-            });
-            if (code2) {
-              resolve(code2.data);
-            } else {
-              reject(new Error('QR tidak ditemukan di gambar'));
-            }
-          }
+          const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+          if (code) { resolve(code.data); return; }
+          const code2 = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'invertFirst' });
+          if (code2) resolve(code2.data);
+          else reject(new Error('QR tidak ditemukan'));
         };
         img.onerror = () => reject(new Error('Gagal load gambar'));
         img.src = ev.target.result;
@@ -199,48 +193,48 @@
     });
   }
 
-  /* ── Input token manual → tampilkan field course/session ── */
   document.addEventListener('input', function (e) {
     if (!e.target.closest('#manualToken')) return;
     const val = e.target.value.trim().toUpperCase();
     if (val) {
       parsedQR = { token: val, course_id: '', session_id: '', isManual: true };
-      setManualMode(true);
-      updateQRInfo();
+      setManualMode(true); updateQRInfo();
     } else {
       parsedQR = { token: '', course_id: '', session_id: '', isManual: false };
-      setManualMode(false);
-      updateQRInfo();
+      setManualMode(false); updateQRInfo();
     }
   });
 
   /* ══════════════════════════════════════════
      CHECK IN
+     Mapping ke GAS:
+       device_id = NIM  (dari field #user_id di HTML)
+       user_id   = Nama (dari field #device_id di HTML)
   ══════════════════════════════════════════ */
   document.addEventListener('click', async function (e) {
     if (!e.target.closest('#btnCheckin')) return;
 
-    const btnCI    = $('btnCheckin');
-    const userId   = ($('user_id')?.value   || '').trim();
-    const deviceId = ($('device_id')?.value || '').trim();
-    const token    = parsedQR.token || ($('manualToken')?.value || '').trim().toUpperCase();
+    const btnCI = $('btnCheckin');
 
-    // Course & session: dari scan QR ATAU dari input manual
+    // HTML: user_id = NIM, device_id = Nama
+    const nim   = ($('user_id')?.value   || '').trim();   // NIM
+    const nama  = ($('device_id')?.value || '').trim();   // Nama
+
+    const token     = parsedQR.token || ($('manualToken')?.value || '').trim().toUpperCase();
     const courseId  = parsedQR.course_id  || ($('mhs_course_id')?.value  || '').trim();
     const sessionId = parsedQR.session_id || ($('mhs_session_id')?.value || '').trim();
 
-    if (!userId)   { showResult('statusResult', 'Harap isi NIM terlebih dahulu.', 'error'); return; }
-    if (!deviceId) { showResult('statusResult', 'Harap isi Nama terlebih dahulu.', 'error'); return; }
-    if (!token)    { showResult('statusResult', 'Harap scan QR atau masukkan token.', 'error'); return; }
-    if (!courseId) { showResult('statusResult', 'Harap isi Course ID.', 'error'); return; }
-    if (!sessionId){ showResult('statusResult', 'Harap isi Session ID.', 'error'); return; }
+    if (!nim)       { showResult('statusResult', 'Harap isi NIM terlebih dahulu.', 'error'); return; }
+    if (!nama)      { showResult('statusResult', 'Harap isi Nama terlebih dahulu.', 'error'); return; }
+    if (!token)     { showResult('statusResult', 'Harap scan QR atau masukkan token.', 'error'); return; }
+    if (!courseId)  { showResult('statusResult', 'Harap isi Course ID.', 'error'); return; }
+    if (!sessionId) { showResult('statusResult', 'Harap isi Session ID.', 'error'); return; }
 
     setLoading(btnCI, true);
-
     try {
       const result = await gasPost('presence/checkin', {
-        user_id   : userId,
-        device_id : deviceId,
+        device_id : nim,    // ← NIM  (sinkron dengan accel & GPS)
+        user_id   : nama,   // ← Nama
         course_id : courseId,
         session_id: sessionId,
         qr_token  : token,
@@ -248,20 +242,15 @@
       });
 
       if (result.ok) {
-        showResult(
-          'statusResult',
-          '✅ Check-in berhasil! <strong>' + userId + '</strong> — ' + deviceId +
-          '<br>📘 ' + courseId + ' · ' + sessionId,
-          'success'
-        );
+        showResult('statusResult',
+          '✅ Check-in berhasil! NIM: <strong>' + nim + '</strong> — ' + nama +
+          '<br>📘 ' + courseId + ' · ' + sessionId, 'success');
         if ($('manualToken')) $('manualToken').value = '';
         parsedQR = { token: '', course_id: '', session_id: '', isManual: false };
-        setManualMode(false);
-        updateQRInfo();
+        setManualMode(false); updateQRInfo();
       } else {
         showResult('statusResult', '❌ Gagal: ' + (result.error || 'Token tidak valid atau expired.'), 'error');
       }
-
     } catch (err) {
       showResult('statusResult', '❌ Koneksi gagal: ' + err.message, 'error');
     } finally {
@@ -271,37 +260,37 @@
 
   /* ══════════════════════════════════════════
      CEK STATUS
+     Pakai device_id = NIM sebagai identifier
   ══════════════════════════════════════════ */
   document.addEventListener('click', async function (e) {
     if (!e.target.closest('#btnStatus')) return;
 
-    const userId    = ($('user_id')?.value || '').trim();
+    // NIM dari field #user_id
+    const nim       = ($('user_id')?.value || '').trim();
     const courseId  = parsedQR.course_id  || ($('mhs_course_id')?.value  || '').trim();
     const sessionId = parsedQR.session_id || ($('mhs_session_id')?.value || '').trim();
 
-    if (!userId) { showResult('statusResult', 'Harap isi NIM terlebih dahulu.', 'error'); return; }
+    if (!nim) { showResult('statusResult', 'Harap isi NIM terlebih dahulu.', 'error'); return; }
 
     try {
       const result = await gasGet('presence/status', {
-        user_id   : userId,
+        device_id : nim,   // ← pakai device_id = NIM
         course_id : courseId,
         session_id: sessionId
       });
 
       if (result.ok) {
-        const d     = result.data;
+        const d = result.data;
         const hadir = d.status === 'checked_in';
         const detail = [d.course_id, d.session_id].filter(Boolean).join(' / ');
-        showResult(
-          'statusResult',
+        showResult('statusResult',
           (hadir ? '✅' : '⏳') + ' <strong>' + (hadir ? 'Sudah hadir' : 'Belum hadir') + '</strong>' +
-          (detail ? ' — ' + detail : ''),
-          hadir ? 'success' : 'error'
-        );
+          (detail ? ' — ' + detail : '') +
+          (d.user_id ? '<br>Nama: ' + d.user_id : ''),
+          hadir ? 'success' : 'error');
       } else {
         showResult('statusResult', '⏳ Belum ada data presensi. ' + (result.error || ''), 'error');
       }
-
     } catch (err) {
       showResult('statusResult', '❌ Koneksi gagal: ' + err.message, 'error');
     }

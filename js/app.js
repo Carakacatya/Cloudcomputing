@@ -1,99 +1,37 @@
-/* ════════════════════════════════════════════════
-   app.js — Shared utilities
-   4 tab: Dosen | Mahasiswa | Accel | GPS
-   ════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════
+   app.js — Tab switching + theme
+   (role gate logic ada di inline script index.html)
+   ══════════════════════════════════════════════ */
 
-/* ── THEME TOGGLE ──────────────────────────────── */
-(function initTheme() {
-  const btn = document.getElementById('themeToggle');
-  if (!btn) return;
-  const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-  if (prefersDark) document.body.classList.add('dark');
-  btn.addEventListener('click', () => document.body.classList.toggle('dark'));
-})();
-
-
-/* ── PAGE SWITCHING ────────────────────────────── */
-(function initPageSwitch() {
-  const tabs = [
-    { btn: 'btnDosen',     page: 'dosenPage'     },
-    { btn: 'btnMahasiswa', page: 'mahasiswaPage'  },
-    { btn: 'btnAccel',     page: 'accelPage'      },
-    { btn: 'btnGps',       page: 'gpsPage'        },
-  ];
-
-  const indicator = document.getElementById('segIndicator');
-
-  tabs.forEach((tab, idx) => {
-    const btn = document.getElementById(tab.btn);
-    if (!btn) return;
-    btn.addEventListener('click', () => switchTo(idx));
-  });
-
-  function switchTo(activeIdx) {
-    tabs.forEach((tab, idx) => {
-      const btn  = document.getElementById(tab.btn);
-      const page = document.getElementById(tab.page);
-      if (!btn || !page) return;
-
-      if (idx === activeIdx) {
-        btn.classList.add('active');
-        page.classList.add('active-page');
-      } else {
-        btn.classList.remove('active');
-        page.classList.remove('active-page');
-      }
-    });
-
-    // Geser indicator
-    if (indicator) {
-      const positions = ['', 'right', 'right2', 'right3'];
-      indicator.className = 'seg-indicator ' + (positions[activeIdx] || '');
-    }
-
-    // Stop scanner kalau pindah dari mahasiswa
-    if (activeIdx !== 1 && typeof window.stopScanner === 'function') {
-      window.stopScanner();
-    }
-    // Stop accel kalau pindah dari accel
-    if (activeIdx !== 2 && typeof window.stopAccel === 'function') {
-      window.stopAccel();
-    }
-    // Stop GPS kalau pindah dari gps
-    if (activeIdx !== 3 && typeof window.stopGps === 'function') {
-      window.stopGps();
-    }
-  }
-})();
-
-
-/* ── HELPER: SET LOADING ───────────────────────── */
-function setLoading(btn, isLoading) {
-  if (!btn) return;
-  if (isLoading) {
-    btn.classList.add('is-loading');
-    btn.disabled = true;
-  } else {
-    btn.classList.remove('is-loading');
-    btn.disabled = false;
+/* ── SHARED HELPERS (dipakai di semua module) ── */
+function showResult(id, html, type, autoHide = 4000) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = `
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      ${type === 'success'
+        ? '<polyline points="20 6 9 17 4 12"/>'
+        : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'}
+    </svg>
+    <span>${html}</span>`;
+  el.className = 'result-box ' + type;
+  el.classList.remove('hidden');
+  if (autoHide > 0) {
+    clearTimeout(el._timer);
+    el._timer = setTimeout(() => el.classList.add('hidden'), autoHide);
   }
 }
 
+function setLoading(btn, on) {
+  if (!btn) return;
+  btn.disabled = on;
+  btn.classList.toggle('is-loading', on);
+}
 
-/* ── HELPER: SHOW RESULT BOX ───────────────────── */
-function showResult(elementId, msg, type, autohide = 7000) {
-  const el = document.getElementById(elementId);
+/* ── STATUS bar update untuk accel ── */
+function setAccelStatus(text, running) {
+  const el = document.getElementById('accelStatus');
   if (!el) return;
-
-  const iconOk  = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
-  const iconErr = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="0.6" fill="currentColor" stroke="none"/></svg>`;
-
-  el.className = `result-box ${type}`;
-  el.innerHTML = (type === 'success' ? iconOk : iconErr) + `<span>${msg}</span>`;
-  el.classList.remove('hidden');
-
-  clearTimeout(el._timer);
-  if (autohide > 0) {
-    el._timer = setTimeout(() => el.classList.add('hidden'), autohide);
-  }
+  el.textContent = text;
+  el.className = running ? 'stat-val stat-val--active' : 'stat-val stat-val--idle';
 }
