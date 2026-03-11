@@ -1,4 +1,3 @@
-Cloudcomputing
 
 Project ini merupakan tugas praktikum mata kuliah Cloud Computing yang dikerjakan secara berkelompok sebelum UTS pada semester 6 Program Studi D4 Teknik Informatika.
 
@@ -42,7 +41,7 @@ Monitoring data sensor perangkat
 Base URL API
 
 
-📡 Endpoint API
+Endpoint API
 Method	Endpoint	Deskripsi
 POST	/scan-presence	Mencatat presensi berdasarkan QR
 GET	/presence-status	Mengecek status presensi
