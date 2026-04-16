@@ -1,14 +1,5 @@
 const BASE_URL = "https://script.google.com/macros/s/AKfycbzwaWQqPtM0bVDoOfTvX6QhOi9cXWulQYVoWKErPQd9cULmjFQDc8jYY1OIeDg9mYqH/exec";
 
-/* ════════════════════════════════════════════════
-   SOLUSI FINAL:
-   Jangan pakai path setelah /exec → menyebabkan
-   redirect yang diblokir CORS.
-
-   Kirim endpoint sebagai parameter ?path=...
-   GAS baca via e.parameter.path
-   ════════════════════════════════════════════════ */
-
 async function gasPost(path, payload) {
   // Hapus leading slash dari path
   const endpoint = path.replace(/^\//, '');
